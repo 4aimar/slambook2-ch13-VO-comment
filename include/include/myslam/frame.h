@@ -9,49 +9,56 @@
     使用<>这种方式，编译器查找的时候，会在编译器的安装目录的标准库中开始查找，
     ""这种方式，会在当前的工程所在的文件夹开始寻找，也就是你的源程序所在的文件夹。有的编译器，要求十分严格，不能混用，有的就可以。*/
 
-
 #include "myslam/common_include.h"
 
-
-namespace myslam{
+namespace myslam
+{
 
     // forward declare
-    struct MapPoint;  //这里为什么要申明MapPoint
+    struct MapPoint; // 这里为什么要申明MapPoint
     struct Feature;
 
-/**
- * 帧
- * 每一帧分配独立id，关键帧分配关键帧ID
- */
+    /**
+     * 帧
+     * 每一帧分配独立id，关键帧分配关键帧ID
+     */
 
-    struct Frame {
+    struct Frame
+    {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        typedef std::shared_ptr<Frame> Ptr; //无论Frame还是Feature还是MapPoint，后面都是在用智能指针类型在构建对象，所以这里有这句智能指针定义
+        typedef std::shared_ptr<Frame> Ptr; // 无论Frame还是Feature还是MapPoint，后面都是在用智能指针类型在构建对象，所以这里有这句智能指针定义
 
-        unsigned long id_=0; //id of current frame ,,可以在struct内直接对成员变量直接赋值吗？
-        unsigned long keyframe_id_ = 0; //id of keyframe
-        bool is_keyframe_=false;
+        unsigned long id_ = 0;          // id of current frame ,,可以在struct内直接对成员变量直接赋值吗？
+        unsigned long keyframe_id_ = 0; // id of keyframe
+        bool is_keyframe_ = false;
         double time_stamp_;
-        SE3 pose_ ;//T李群形式的变换矩阵
-        std::mutex pose_mutex_;          // Pose数据锁
-        cv::Mat left_img_, right_img_;   // 双目图像，左目，右目
+        /*
+        added by caohm
+        current_frame_ 包含左右两个摄像头的信息。在一个立体视觉SLAM系统中，current_frame_ 通常代表当前帧，它不仅包含左目和右目的图像信息，还包含相机的位姿信息。
+        通常情况下，SLAM系统使用一个位姿来表示当前帧相机的位置，这个位姿可以是左目相机或右目相机的位姿。
+        current_frame_->Pose() 表示当前帧相机（通常是左目相机）的位姿。
+        通过已知的相对位姿，可以计算右目相机的位姿。
+        */
+        SE3 pose_;                     // T李群形式的变换矩阵
+        std::mutex pose_mutex_;        // Pose数据锁
+        cv::Mat left_img_, right_img_; // 双目图像，左目，右目
 
         std::vector<std::shared_ptr<Feature>> features_left_;
         std::vector<std::shared_ptr<Feature>> features_right_;
-/*shared_ptr是一种智能指针（smart pointer），作用有如同指针，但会记录有多少个shared_ptrs共同指向一个对象。这便是所谓的引用计数
- * （reference counting）,比如我们把只能指针赋值给另外一个对象,那么对象多了一个智能指针指向它,所以这个时候引用计数会增加一个,
- * 我们可以用shared_ptr.use_count()函数查看这个智能指针的引用计数,一旦最后一个这样的指针被销毁，
- * 也就是一旦某个对象的引用计数变为0，这个对象会被自动删除,当我们程序结束进行return的时候,智能指针的引用计数会减1,
-*/
+        /*shared_ptr是一种智能指针（smart pointer），作用有如同指针，但会记录有多少个shared_ptrs共同指向一个对象。这便是所谓的引用计数
+         * （reference counting）,比如我们把只能指针赋值给另外一个对象,那么对象多了一个智能指针指向它,所以这个时候引用计数会增加一个,
+         * 我们可以用shared_ptr.use_count()函数查看这个智能指针的引用计数,一旦最后一个这样的指针被销毁，
+         * 也就是一旦某个对象的引用计数变为0，这个对象会被自动删除,当我们程序结束进行return的时候,智能指针的引用计数会减1,
+         */
 
-//构造函数
+        // 构造函数
 
         Frame() {}
 
         Frame(long id, double time_stamp, const SE3 &pose, const Mat &left,
               const Mat &right);
-        //函数参数中*为指针传递参数，&为引用传递参数，前面没有标识符时为值传递参数
+        // 函数参数中*为指针传递参数，&为引用传递参数，前面没有标识符时为值传递参数
         /*    函数里面的是形式参数，形参;    实际传入函数的变量是实际参数，实参
          * 值传递：
                形参是实参的拷贝，改变形参的值并不会影响外部实参的值。从被调用函数的角度来说，值传递是单向的（实参->形参），参数的值只能传入，
@@ -64,13 +71,14 @@ namespace myslam{
                栈中存放的地址访问主调函数中的实参变量。正因为如此，被调函数对形参做的任何操作都影响了主调函数中的实参变量。
          */
 
-
-        SE3 Pose() {
+        SE3 Pose()
+        {
             std::unique_lock<std::mutex> lck(pose_mutex_);
             return pose_;
         }
 
-        void SetPose(const SE3 &pose) {
+        void SetPose(const SE3 &pose)
+        {
             std::unique_lock<std::mutex> lck(pose_mutex_);
             pose_ = pose;
         }
@@ -80,9 +88,7 @@ namespace myslam{
 
         /// 工厂构建模式，分配id
         static std::shared_ptr<Frame> CreateFrame();
-
     };
 }
 
-#endif  // MYSLAM_FRAME_H
-
+#endif // MYSLAM_FRAME_H

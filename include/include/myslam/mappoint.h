@@ -4,28 +4,32 @@
 
 #include "myslam/common_include.h"
 
-namespace myslam{
+namespace myslam
+{
 
-
-    struct Frame; //这里为什么要声明Frame？应该是可有可无的
+    struct Frame; // 这里为什么要声明Frame？应该是可有可无的
     struct Feature;
 
     /**
- * 路标点类
- * 特征点在三角化之后形成路标点
- */
+     * 路标点类
+     * 特征点在三角化之后形成路标点
+     */
 
-
-    struct MapPoint{
-        public:
-                EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
+    struct MapPoint
+    {
+    public:
+        EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
         typedef std::shared_ptr<MapPoint> Ptr;
-        unsigned long id_ = 0;  // ID
+        unsigned long id_ = 0; // ID
         bool is_outlier_ = false;
-        Vec3 pos_ = Vec3::Zero();  // Position in world
+        /*
+        added by caohm
+        mp->pos_ 是一个三维向量，用于描述某个地图点在世界坐标系中的位置。
+        */
+        Vec3 pos_ = Vec3::Zero(); // Position in world
 
         std::mutex data_mutex_;
-        int observed_times_ = 0;  // being observed by feature matching algo.
+        int observed_times_ = 0; // being observed by feature matching algo.
 
         std::list<std::weak_ptr<Feature>> observations_;
 
@@ -33,17 +37,20 @@ namespace myslam{
 
         MapPoint(long id, Vec3 position);
 
-        Vec3 Pos() {
+        Vec3 Pos()
+        {
             std::unique_lock<std::mutex> lck(data_mutex_);
             return pos_;
         }
 
-        void SetPos(const Vec3 &pos) {
+        void SetPos(const Vec3 &pos)
+        {
             std::unique_lock<std::mutex> lck(data_mutex_);
             pos_ = pos;
         };
 
-        void AddObservation(std::shared_ptr<Feature> feature) {
+        void AddObservation(std::shared_ptr<Feature> feature)
+        {
             std::unique_lock<std::mutex> lck(data_mutex_);
             observations_.push_back(feature);
             observed_times_++;
@@ -51,15 +58,15 @@ namespace myslam{
 
         void RemoveObservation(std::shared_ptr<Feature> feat);
 
-        std::list<std::weak_ptr<Feature>> GetObs() {
+        std::list<std::weak_ptr<Feature>> GetObs()
+        {
             std::unique_lock<std::mutex> lck(data_mutex_);
             return observations_;
         }
-
 
         // factory function
         static MapPoint::Ptr CreateNewMappoint();
     };
 }
 
-#endif  // MYSLAM_MAPPOINT_H
+#endif // MYSLAM_MAPPOINT_H

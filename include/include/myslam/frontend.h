@@ -10,17 +10,25 @@
 #include "myslam/camera.h"
 #include "myslam/viewer.h"
 
-namespace myslam{
-    enum class FrontendStatus { INITING, TRACKING_GOOD, TRACKING_BAD, LOST };
+namespace myslam
+{
+    enum class FrontendStatus
+    {
+        INITING,
+        TRACKING_GOOD,
+        TRACKING_BAD,
+        LOST
+    };
 
-    class Frontend{
+    class Frontend
+    {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
         typedef std::shared_ptr<Frontend> Ptr;
 
         Frontend();
 
-        bool AddFrame(Frame::Ptr frame);//依次在源文件中实现各个成员函数，addframe是第一个
+        bool AddFrame(Frame::Ptr frame); // 依次在源文件中实现各个成员函数，addframe是第一个
 
         void SetMap(Map::Ptr map) { map_ = map; }
 
@@ -30,24 +38,29 @@ namespace myslam{
 
         FrontendStatus GetStatus() const { return status_; }
 
-        void SetCameras(Camera::Ptr left, Camera::Ptr right) {   //这里应该是为了设定相机参数
+        void SetCameras(Camera::Ptr left, Camera::Ptr right)
+        { // 这里应该是为了设定相机参数
             camera_left_ = left;
             camera_right_ = right;
         }
 
     private:
+        /*
+        added by caohm
+        初始化时，frontend的状态是INITING
+        */
         FrontendStatus status_ = FrontendStatus::INITING;
-        Frame::Ptr current_frame_ = nullptr;  // 当前帧
-        Frame::Ptr last_frame_ = nullptr;     // 上一帧
-        Camera::Ptr camera_left_ = nullptr;   // 左侧相机，参数情况
-        Camera::Ptr camera_right_ = nullptr;  // 右侧相机，参数情况
+        Frame::Ptr current_frame_ = nullptr; // 当前帧
+        Frame::Ptr last_frame_ = nullptr;    // 上一帧
+        Camera::Ptr camera_left_ = nullptr;  // 左侧相机，参数情况
+        Camera::Ptr camera_right_ = nullptr; // 右侧相机，参数情况
 
         Map::Ptr map_ = nullptr;
 
         std::shared_ptr<Backend> backend_ = nullptr;
         std::shared_ptr<Viewer> viewer_ = nullptr;
 
-        SE3 relative_motion_;  // 当前帧与上一帧的相对运动，用于估计当前帧pose初值
+        SE3 relative_motion_; // 当前帧与上一帧的相对运动，用于估计当前帧pose初值
 
         // params
         int num_features_ = 200;
@@ -55,15 +68,14 @@ namespace myslam{
         int num_features_tracking_ = 50;
         int num_features_tracking_bad_ = 20;
         int num_features_needed_for_keyframe_ = 80;
-        int tracking_inliers_ = 0;  // inliers, used for testing new keyframes
+        int tracking_inliers_ = 0; // inliers, used for testing new keyframes
 
-        cv::Ptr<cv::GFTTDetector> gftt_;  // feature detector in opencv
-
+        cv::Ptr<cv::GFTTDetector> gftt_; // feature detector in opencv
 
         /**
-     * Track in normal mode
-     * @return true if success
-     */
+         * Track in normal mode
+         * @return true if success
+         */
         bool Track();
 
         /**
